@@ -3,27 +3,26 @@ import matplotlib.pyplot as plt
 
 import torch
 from torch import optim
-from torch import nn
 import torch.nn.functional as F
 
 import seaborn as sns
-from sklearn.datasets import make_moons, make_circles, make_s_curve, load_iris
+from sklearn.datasets import load_iris
 import pandas as pd
 
 # Import the pytorch Kmeans class
 from Models.KMeans.kmeans_torch import KMeansPT
 
 
-sns.set_context("talk", font_scale=1.2)
-
 iris = load_iris()
-X = iris.data[:, :4]  # we only take the first four features.
+X = iris.data
 y = iris.target
 
 x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
 y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
 
 plt.figure(2, figsize=(8, 6))
+
+
 # Plot the training points
 sns.scatterplot(x=X[:, 0],
                 y=X[:, 1],
@@ -34,62 +33,66 @@ plt.xlabel('Sepal length')
 plt.ylabel('Sepal width')
 plt.show()
 
-
-sns.pairplot(pd.DataFrame({
-    'sepal length': X[:, 0],
-    'sepal width': X[:, 1],
-    'petal length': X[:, 2],
-    'petal width': X[:, 3],
-    'class': y
-}),
-    hue='class'
-)
-plt.show()
+# Check if GPU is available and move data/model accordingly
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# Declare model and use the GPU
-kmp = KMeansPT(4, 3, mask="softmax").cuda()
+# Declare model and use  GPU
+kmeans_model = KMeansPT(input_size=4,
+                        K=3,
+                        mask="softmax").to(device)
 
-# Standardize and pass the vectors to GPU
-X_T = torch.from_numpy(X).float().cuda()
+# Standardize and move vectors to GPU if available
+# Since the dataset is small the whole set can be stored in the GPU memory
+X_T = torch.from_numpy(X).float().to(device)
 
 X_T = X_T - X_T.mean(0)
 X_T = X_T / X_T.std(0)
 
 # Initialize centroids
-kmp.init_centroids(X_T)
-
-# kmp = kmp.cuda()
+kmeans_model.init_centroids(X_T)
 
 # Use ADAM as the optimizer
-optimizer = torch.optim.Adam(kmp.parameters(), lr=0.5)
+optimizer = torch.optim.Adam(kmeans_model.parameters(), lr=0.5)
 
 # Training cycle
 for i in range(10):
 
     # Calculate the output
-    out = kmp(X_T)
+    out = kmeans_model(X_T)
 
-    # Cost function to optimize, the average distance to the centroids
+    # Cost function to optimize: average distance to the centroids
+    # If max is the mask only those assigned to the centroid will have gradient and 0 otherwise
     l = torch.mean((out).pow(2))
 
-    # Update the optimizer calculate the gradients for the centroids
+    # Update the optimizer, calculate the gradients for the centroids
     optimizer.zero_grad()
     l.backward()
     optimizer.step()
 
 print(l.grad_fn)
 
-kmp.V.detach().cpu().numpy() * X.std(0) + X.mean(0)
-print(kmp.V)
+# Return from GPU tensor to numpy array and re-scale the centroids
+centroids = kmeans_model.V.detach().cpu().numpy() * X.std(0) + X.mean(0)
+print("KMeans Centroids:\n", np.round(centroids, 2))
 
-y_hat = out.argmax(1).detach().cpu().numpy()
+# Calculate real centroids for each true class
+real_centroids = np.array([X[y == label].mean(axis=0) for label in range(3)])
+print("Real Centroids:\n", np.round(real_centroids, 2))
 
+# Predict cluster labels
+with torch.no_grad():
+    y_hat = out.argmax(1).detach().cpu().numpy()
+
+
+# Plot the results
 sns.set_context("talk", font_scale=1.1)
 plt.figure(figsize=(12, 6))
+
 plt.subplot(121)
 sns.scatterplot(x=X[:, 0], y=X[:, 1], hue=y_hat, palette="Dark2")
 plt.title("Clusters found")
+
 plt.subplot(122)
 sns.scatterplot(x=X[:, 0], y=X[:, 1], hue=y, palette="Dark2")
 
