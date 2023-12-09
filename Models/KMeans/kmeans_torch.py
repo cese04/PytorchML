@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class KMeansPT(nn.Module):
     def __init__(self, input_size: int, K: int = 3, mask: str = 'max'):
         """
@@ -16,7 +17,8 @@ class KMeansPT(nn.Module):
 
         # Model parameters
         self.K = K
-        self.V = nn.Parameter(torch.randn([K, input_size], requires_grad=True)).float()
+        self.V = nn.Parameter(torch.randn(
+            [K, input_size], requires_grad=True)).float()
         self.mask = mask
 
     def init_centroids(self, X: torch.Tensor):
@@ -31,7 +33,22 @@ class KMeansPT(nn.Module):
         # Perform a random permutation and select the K first
         perm = torch.randperm(X2.size(0))
         idx = perm[:self.K]
+        # The centroids requires to calculate the gradient to be updated
         self.V = nn.Parameter(X2[idx], requires_grad=True)
+
+    def distance(self, X: torch.Tensor) -> torch.Tensor:
+        """Calculates the distance to the centroids without applying the mask"""
+        # Matrix to store distances
+        l = len(X)
+        D = torch.zeros((l, self.K))
+
+        # Calculate distances to centroids
+        for k in range(self.K):
+            # Calculate distance to each centroid
+            d = torch.squeeze(torch.cdist(X, self.V[k:k+1], 2))
+            D[:, k] = d
+
+        return D
 
     def forward(self, X: torch.Tensor) -> torch.Tensor:
         """
