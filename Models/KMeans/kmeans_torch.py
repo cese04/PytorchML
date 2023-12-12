@@ -60,19 +60,12 @@ class KMeansPT(nn.Module):
         Returns:
             torch.Tensor: Matrix containing distances to centroids multiplied by the mask.
         """
-        # Matrix to store distances
-        l = len(X)
-        D = torch.zeros((l, self.K))
+
+        # Calculate distances to centroids
+        D = torch.cdist(X, self.V, 2)
 
         # Matrix serving as a mask
         U = torch.zeros_like(D)
-
-        # Calculate distances to centroids
-        for k in range(self.K):
-            # Calculate distance to each centroid
-            d = torch.squeeze(torch.cdist(X, self.V[k:k+1], 2))
-            D[:, k] = d
-
         if self.mask == "max":
             # Only update gradients assigned to the nearest centroid
             U[torch.arange(len(U)), D.argmin(1)] = 1
