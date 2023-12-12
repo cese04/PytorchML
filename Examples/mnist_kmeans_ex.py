@@ -14,8 +14,9 @@ N_ITERS = 15
 
 # Define a transform to normalize the images
 transform = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize((0.5,), (0.5,)),
                                 ])
+
+
 # Download and load the training data
 trainset = datasets.MNIST('~/.pytorch/MNIST_data/',
                           download=True, train=True, transform=transform)
@@ -35,9 +36,10 @@ model = KMeansPT(784,
                  mask='max').cuda()
 images_examples = images_examples.view(images_examples.shape[0], -1)
 model.init_centroids(images_examples.cuda())
+model.cuda()
 
 # Use ADAM as the optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.1, weight_decay=0.005)
+optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.001)
 
 
 # Training cycle
@@ -52,7 +54,8 @@ for e in range(N_ITERS):
         optimizer.zero_grad()
 
         output = model(images)
-        #The loss for the model is the mean squared distance to the nearest cluster
+
+        # The loss for the model is the mean squared distance to the nearest cluster
         loss = torch.mean(output.pow(2))
 
         # Update the parameters
@@ -64,18 +67,22 @@ for e in range(N_ITERS):
     else:
         print(f"Training loss: {running_loss/len(trainloader)}")
 
-clusters = model.V.detach().cpu().numpy()
+clusters = model.V
+clusters = clusters.detach().cpu().numpy()
 
 szC = np.shape(clusters)
 
-print("CLuster sizes: ", szC)
+print("Cluster sizes: ", szC)
 
 # Display the clusters
 plt.figure(figsize=(8, 8))
 for i in range(25):
+
     plt.subplot(5, 5, i+1)
     # Return from flat vector to image shape and display the clusters
     plt.imshow(
-        np.clip(np.uint8(clusters[i].reshape(28, 28)*255), 0, 255), cmap="gray")
+        np.clip(np.uint8(clusters[i].reshape(28, 28)*255),
+                0, 255),
+        cmap="gray")
 
 plt.show()
