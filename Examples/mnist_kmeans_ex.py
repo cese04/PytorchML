@@ -9,8 +9,12 @@ import seaborn as sns
 # Import the pytorch Kmeans class
 from Models.KMeans.kmeans_torch import KMeansPT
 
+
+# Check if GPU is available and set the device accordingly
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 N_CLUSTERS = 25
-N_ITERS = 15
+N_ITERS = 10
 
 # Define a transform to normalize the images
 transform = transforms.Compose([transforms.ToTensor(),
@@ -36,9 +40,9 @@ model = KMeansPT(784,
                  mask='max').cuda()
 images_examples = images_examples.view(images_examples.shape[0], -1)
 model.init_centroids(images_examples.cuda())
-model.cuda()
+model.to(device)
 
-# Use ADAM as the optimizer
+# Use Adadelta as the optimizer
 optimizer = optim.Adadelta(model.parameters(), lr=0.01, weight_decay=0.001)
 
 
@@ -47,7 +51,7 @@ for e in range(N_ITERS):
     running_loss = 0
     for images, labels in trainloader:
         # Flatten MNIST images into a 784 long vector
-        images = images.cuda()
+        images = images.to(device)
         images = images.view(images.shape[0], -1)
 
         # Training pass
