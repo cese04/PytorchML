@@ -9,7 +9,7 @@ import seaborn as sns
 # Import the pytorch Kmeans class
 from Models.KMeans.kmeans_torch import KMeansPT
 
-N_CLUSTERS = 30
+N_CLUSTERS = 25
 N_ITERS = 15
 
 # Define a transform to normalize the images
@@ -39,7 +39,7 @@ model.init_centroids(images_examples.cuda())
 model.cuda()
 
 # Use ADAM as the optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.001)
+optimizer = optim.Adadelta(model.parameters(), lr=0.01, weight_decay=0.001)
 
 
 # Training cycle
