@@ -25,7 +25,7 @@ transform = transforms.Compose([transforms.ToTensor(),
 trainset = datasets.MNIST('~/.pytorch/MNIST_data/',
                           download=True, train=True, transform=transform)
 trainloader = torch.utils.data.DataLoader(
-    trainset, batch_size=2048*8, shuffle=True)
+    trainset, batch_size=2048*64, shuffle=True)
 
 
 # Create an iterator to pass batches of data
@@ -85,8 +85,9 @@ for i in range(25):
     plt.subplot(5, 5, i+1)
     # Return from flat vector to image shape and display the clusters
     plt.imshow(
-        np.clip(np.uint8(clusters[i].reshape(28, 28)*255),
-                0, 255),
-        cmap="gray")
+        np.uint8(np.clip(
+            clusters[i].reshape(28, 28)*255,
+            0, 255)),
+        cmap='gray')
 
 plt.show()
