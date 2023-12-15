@@ -13,8 +13,10 @@ from Models.KMeans.kmeans_torch import KMeansPT
 # Check if GPU is available and set the device accordingly
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+# Base parameters for the model
 N_CLUSTERS = 25
-N_ITERS = 10
+N_ITERS = 12
+LEARNING_RATE = 0.1
 
 # Define a transform to normalize the images
 transform = transforms.Compose([transforms.ToTensor(),
@@ -43,7 +45,8 @@ model.init_centroids(images_examples.cuda())
 model.to(device)
 
 # Use Adadelta as the optimizer
-optimizer = optim.Adadelta(model.parameters(), lr=0.01, weight_decay=0.001)
+optimizer = optim.Adam(model.parameters(),
+                       lr=LEARNING_RATE)
 
 
 # Training cycle
