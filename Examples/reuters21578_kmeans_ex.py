@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 import requests
 import tarfile
 import os
@@ -33,5 +34,36 @@ nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 
+# Load the dataset
+documents = []
+for file_name in os.listdir(sgm_dir):
+    if file_name.endswith(".sgm"):
+        with open(os.path.join(sgm_dir, file_name), "r", encoding="latin-1") as file:
+            content = file.read()
+            documents.append(content)
+
+# Parse the documents as HTML
+documents_parsed = BeautifulSoup(documents[0], 'html.parser')
+
+# All the articles are between the reuters tag
+articles_set = documents_parsed.find_all('reuters')
+
+# The body of the article contains most of the information
+articles = []
+for doc in articles_set:
+    try:
+        articles.append(doc.body.string)
+    except:
+        pass
 
 
+# Tokenize the articles and remove the stopwords
+tokenized_articles = [word_tokenize(article.lower()) for article in articles]
+filtered_articles = [
+    [word for word in article if word.isalnum() and word not in stop_words]
+    for article in tokenized_articles
+]
+
+# Display some of the articles
+for i in range(3):
+    print(filtered_articles[i])
