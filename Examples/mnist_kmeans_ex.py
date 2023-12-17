@@ -15,8 +15,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Base parameters for the model
 N_CLUSTERS = 25
-N_ITERS = 12
+N_ITERS = 15
 LEARNING_RATE = 0.1
+DISTANCE = "cosine" # "cosine" or "euclidean"
 
 # Define a transform to normalize the images
 transform = transforms.Compose([transforms.ToTensor(),
@@ -39,12 +40,16 @@ images_examples, labels = next(dataiter)
 # Define the model and pass the images to initiate the centroids
 model = KMeansPT(784,
                  N_CLUSTERS,
-                 mask='max').cuda()
+                 mask='max')
+# Flatten the images as a vector
 images_examples = images_examples.view(images_examples.shape[0], -1)
-model.init_centroids(images_examples.cuda())
-model.to(device)
 
-# Use Adadelta as the optimizer
+# Send the model to the available device
+model.to(device)
+model.init_centroids(images_examples.to(device))
+
+
+# Use Adam as the optimizer
 optimizer = optim.Adam(model.parameters(),
                        lr=LEARNING_RATE)
 
@@ -60,7 +65,8 @@ for e in range(N_ITERS):
         # Training pass
         optimizer.zero_grad()
 
-        output = model(images)
+        output = model.forward(images,
+                               distance_metric=DISTANCE)
 
         # The loss for the model is the mean squared distance to the nearest cluster
         loss = torch.mean(output.pow(2))
@@ -92,5 +98,6 @@ for i in range(25):
             clusters[i].reshape(28, 28)*255,
             0, 255)),
         cmap='gray')
+    plt.axis('off')
 
 plt.show()
