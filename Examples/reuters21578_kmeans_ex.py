@@ -6,6 +6,8 @@ import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import io
+from sklearn.feature_extraction.text import TfidfVectorizer
+import matplotlib.pyplot as plt
 
 # Download Reuters-21578 dataset
 reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
@@ -67,3 +69,8 @@ filtered_articles = [
 # Display some of the articles
 for i in range(3):
     print(filtered_articles[i])
+
+text_articles = [" ".join(art) for art in filtered_articles]
+
+vectorizer = TfidfVectorizer()
+tfidf_matrix = vectorizer.fit_transform(filtered_articles)
