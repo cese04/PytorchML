@@ -10,30 +10,24 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import matplotlib.pyplot as plt
 
 # Download Reuters-21578 dataset
-reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
-response = requests.get(reuters_url)
-tar_file = tarfile.open(fileobj=io.BytesIO(response.content),
-                        mode="r:gz")
+# reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
+# response = requests.get(reuters_url)
+# tar_file = tarfile.open(fileobj=io.BytesIO(response.content),
+#                         mode="r:gz")
 
 # Extract the contents
 extract_path = "Data\\reuters"
-tar_file.extractall(extract_path)
+# tar_file.extractall(extract_path)
 
 # Define paths to the dataset
 sgm_dir = extract_path
 
-# Load the dataset
-documents = []
-for file_name in os.listdir(sgm_dir):
-    if file_name.endswith(".sgm"):
-        with open(os.path.join(sgm_dir, file_name), "r", encoding="latin-1") as file:
-            content = file.read()
-            documents.append(content)
-
-# Tokenize and remove stopwords
+# Download the punkt and stopwords package if not available
 nltk.download('punkt')
 nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
+# Add 'reuter' to the stopwords as it is always present in each article
+stop_words.add('reuter')
 
 
 # Load the dataset
@@ -44,19 +38,17 @@ for file_name in os.listdir(sgm_dir):
             content = file.read()
             documents.append(content)
 
-# Parse the documents as HTML
-documents_parsed = BeautifulSoup(documents[0], 'html.parser')
 
-# All the articles are between the reuters tag
-articles_set = documents_parsed.find_all('reuters')
-
-# The body of the article contains most of the information
 articles = []
-for doc in articles_set:
-    try:
-        articles.append(doc.body.string)
-    except:
-        pass
+for doc in documents:
+    # Parse the document as html, the relevant information is within the body tags
+    doc_parsed = BeautifulSoup(doc, 'html.parser').find_all('body')
+
+    for article in doc_parsed:
+        try:
+            articles.append(article.string)
+        except:
+            pass
 
 
 # Tokenize the articles and remove the stopwords
@@ -66,11 +58,16 @@ filtered_articles = [
     for article in tokenized_articles
 ]
 
-# Display some of the articles
-for i in range(3):
-    print(filtered_articles[i])
-
+# Convert to text string for tf-idf feature extraction
 text_articles = [" ".join(art) for art in filtered_articles]
 
-vectorizer = TfidfVectorizer()
-tfidf_matrix = vectorizer.fit_transform(filtered_articles)
+# Display some of the articles
+for i in range(3):
+    print(text_articles[i])
+
+# Transform to tf-idf matrix
+vectorizer = TfidfVectorizer(max_features=5000,
+                            ngram_range =(1,3),
+                            lowercase=False)
+tfidf_matrix = vectorizer.fit_transform(text_articles)
+print(tfidf_matrix.shape)
