@@ -8,6 +8,11 @@ from nltk.corpus import stopwords
 import io
 from sklearn.feature_extraction.text import TfidfVectorizer
 import matplotlib.pyplot as plt
+from Models.KMeans.kmeans_torch import KMeansPT
+import torch
+from torch.utils.data import DataLoader, TensorDataset
+from torch import optim
+
 
 # Download Reuters-21578 dataset
 # reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
@@ -67,7 +72,23 @@ for i in range(3):
 
 # Transform to tf-idf matrix
 vectorizer = TfidfVectorizer(max_features=5000,
-                            ngram_range =(1,3),
-                            lowercase=False)
+                             ngram_range=(1, 3),
+                             lowercase=False)
 tfidf_matrix = vectorizer.fit_transform(text_articles)
 print(tfidf_matrix.shape)
+
+# Convert sparse matrix to PyTorch tensor
+tfidf_tensor = torch.tensor(tfidf_matrix.toarray(), dtype=torch.float)
+
+# Convert PyTorch tensor to DataLoader
+batch_size = 512  # Adjust the batch size based on your available VRAM
+data_loader = DataLoader(TensorDataset(tfidf_tensor),
+                         batch_size=batch_size,
+                         shuffle=True)
+
+dataiter = iter(data_loader)
+batch = next(dataiter)[0]
+
+# Initialize KMeansPT model
+kmeans_model = KMeansPT(input_size=tfidf_tensor.size(1), K=5, mask="max").cuda()
+kmeans_model.init_centroids(batch.cuda())
