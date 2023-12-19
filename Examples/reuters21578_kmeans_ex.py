@@ -92,3 +92,33 @@ batch = next(dataiter)[0]
 # Initialize KMeansPT model
 kmeans_model = KMeansPT(input_size=tfidf_tensor.size(1), K=5, mask="max").cuda()
 kmeans_model.init_centroids(batch.cuda())
+
+# Train the model using Adam
+optimizer = optim.Adam(kmeans_model.parameters(),
+                       lr=0.1, weight_decay=0.001)
+
+# Training cycle
+for e in range(30):
+    running_loss = 0
+    for articles in data_loader:
+        # The tfidf vector is the first element
+        articles = articles[0].cuda()
+
+        # Training pass
+        optimizer.zero_grad()
+
+        # Measure the distance using the cosine similarity
+        output = kmeans_model.forward(articles,
+                               distance_metric='cosine')
+
+        # The loss for the model is the mean squared distance to the nearest cluster
+        loss = torch.mean(output.pow(2))
+
+        # Update the parameters
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item()
+    else:
+        print(f"Training loss: {running_loss/len(data_loader)}")
