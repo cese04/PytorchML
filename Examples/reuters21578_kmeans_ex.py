@@ -12,7 +12,17 @@ from Models.KMeans.kmeans_torch import KMeansPT
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from torch import optim
+import os
 
+
+extract_path = "Data\\reuters"
+
+CHECK_FOLDER = os.path.isdir(extract_path)
+
+if not CHECK_FOLDER:
+    print("created folder : ", MYDIR)
+else:
+    print(MYDIR, "folder already exists.")
 
 # Download Reuters-21578 dataset
 # reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
@@ -21,7 +31,7 @@ from torch import optim
 #                         mode="r:gz")
 
 # Extract the contents
-extract_path = "Data\\reuters"
+
 # tar_file.extractall(extract_path)
 
 # Define paths to the dataset
