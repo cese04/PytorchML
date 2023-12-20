@@ -19,20 +19,19 @@ extract_path = "Data\\reuters"
 
 CHECK_FOLDER = os.path.isdir(extract_path)
 
+# Download Reuters-21578 dataset if it is not available
+
 if not CHECK_FOLDER:
-    print("created folder : ", MYDIR)
+    # Download and extract the contents
+    reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
+    response = requests.get(reuters_url)
+    tar_file = tarfile.open(fileobj=io.BytesIO(response.content),
+                                                    mode="r:gz")
+    tar_file.extractall(extract_path)
+    print("created folder : ", extract_path)
 else:
-    print(MYDIR, "folder already exists.")
+    print(extract_path, "folder already exists.")
 
-# Download Reuters-21578 dataset
-# reuters_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/reuters21578-mld/reuters21578.tar.gz"
-# response = requests.get(reuters_url)
-# tar_file = tarfile.open(fileobj=io.BytesIO(response.content),
-#                         mode="r:gz")
-
-# Extract the contents
-
-# tar_file.extractall(extract_path)
 
 # Define paths to the dataset
 sgm_dir = extract_path
